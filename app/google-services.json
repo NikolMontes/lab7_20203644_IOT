@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "471414782563",
+    "project_id": "telemoney-d4be4",
+    "storage_bucket": "telemoney-d4be4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471414782563:android:6cb93bdba5d7cb32179656",
+        "android_client_info": {
+          "package_name": "com.example.telemoney"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "471414782563-l6bqgh1ddgssk3lnvoonsn53aaulm142.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.telemoney",
+            "certificate_hash": "f413ee2e8a756657e972b07411efc13eee075895"
+          }
+        },
+        {
+          "client_id": "471414782563-o06k72s4h1u09tsb9sb9dk4klc5ornva.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzQmvpYMurLUlq6ZSINA6Ju9aeVcqH8io"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "471414782563-o06k72s4h1u09tsb9sb9dk4klc5ornva.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
