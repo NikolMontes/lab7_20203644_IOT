@@ -196,11 +196,18 @@ tools:context=".ResumenActivity">
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="📊\n\nGráfico Circular\n(Ingresos vs Egresos)"
+                        android:text="\n\nGráfico Circular\n(Ingresos vs Egresos)"
                         android:textSize="14sp"
                         android:textColor="@color/text_secondary"
                         android:gravity="center"
+                        android:visibility="gone"
                         android:alpha="0.7" />
+
+                    <WebView
+                        android:id="@+id/webview_pie_chart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@android:color/transparent"/>
 
                 </FrameLayout>
 
@@ -342,11 +349,18 @@ tools:context=".ResumenActivity">
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="📊\n\nGráfico de Barras\n(Evolución Mensual)"
+                        android:text="\n\nGráfico de Barras\n(Evolución Mensual)"
                         android:textSize="14sp"
                         android:textColor="@color/text_secondary"
                         android:gravity="center"
+                        android:visibility="gone"
                         android:alpha="0.7" />
+
+                    <WebView
+                        android:id="@+id/webview_bar_chart"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@android:color/transparent"/>
 
                 </FrameLayout>
 

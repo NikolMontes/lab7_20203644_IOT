@@ -81,6 +81,7 @@ public class EgresosActivity extends AppCompatActivity {
             int itemId = item.getItemId();
 
             if (itemId == R.id.nav_ingresos) {
+                startActivity(new Intent(this, IngresosActivity.class));
                 return true;
 
             } else if (itemId == R.id.nav_egresos) {
@@ -103,7 +104,7 @@ public class EgresosActivity extends AppCompatActivity {
             return false;
         });
 
-        bottomNav.setSelectedItemId(R.id.nav_egresos);
+        //bottomNav.setSelectedItemId(R.id.nav_egresos);
 
 
     }

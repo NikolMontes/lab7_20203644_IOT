@@ -89,13 +89,13 @@ public class EgresoAdapter extends RecyclerView.Adapter<EgresoAdapter.EgresoView
 
         public EgresoViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvTitulo = itemView.findViewById(R.id.tv_titulo_ingreso); // si usas el mismo ID
-            tvDescripcion = itemView.findViewById(R.id.tv_descripcion_ingreso);
-            tvFecha = itemView.findViewById(R.id.tv_fecha_ingreso);
-            tvMonto = itemView.findViewById(R.id.tv_monto_ingreso);
-            btnEditar = itemView.findViewById(R.id.btn_editar_ingreso);
-            btnEliminar = itemView.findViewById(R.id.btn_eliminar_ingreso);
-            ivIcono = itemView.findViewById(R.id.iv_icono_ingreso);
+            tvTitulo = itemView.findViewById(R.id.tv_titulo_egreso); // si usas el mismo ID
+            tvDescripcion = itemView.findViewById(R.id.tv_descripcion_egreso);
+            tvFecha = itemView.findViewById(R.id.tv_fecha_egreso);
+            tvMonto = itemView.findViewById(R.id.tv_monto_egreso);
+            btnEditar = itemView.findViewById(R.id.btn_editar_egreso);
+            btnEliminar = itemView.findViewById(R.id.btn_eliminar_egreso);
+            ivIcono = itemView.findViewById(R.id.iv_icono_egreso);
         }
     }
 

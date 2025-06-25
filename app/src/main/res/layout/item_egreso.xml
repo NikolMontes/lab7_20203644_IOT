@@ -122,7 +122,7 @@
 
             <!-- Botón eliminar -->
             <ImageButton
-                android:id="@+id/btn_eliminar_ingreso"
+                android:id="@+id/btn_eliminar_egreso"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:src="@drawable/ic_delete"

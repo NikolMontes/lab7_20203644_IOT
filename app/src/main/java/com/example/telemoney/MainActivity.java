@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
         if (user == null) {
             startActivity(new Intent(this, LoginActivity.class));
         } else {
-            startActivity(new Intent(this, VistainicialActivity.class));
+            startActivity(new Intent(this, ResumenActivity.class));
         }
 
         finish(); // No queremos volver a esta pantalla

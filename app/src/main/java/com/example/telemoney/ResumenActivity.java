@@ -2,10 +2,14 @@ package com.example.telemoney;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -20,9 +24,20 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+
+//import com.github.mikephil.charting.charts.PieChart;
+//import com.github.mikephil.charting.components.Legend;
+//import com.github.mikephil.charting.data.PieData;
+//import com.github.mikephil.charting.data.PieDataSet;
+//import com.github.mikephil.charting.data.PieEntry;
+//import com.github.mikephil.charting.utils.ColorTemplate;
+
 
 public class ResumenActivity extends AppCompatActivity {
 
@@ -31,6 +46,9 @@ public class ResumenActivity extends AppCompatActivity {
     private String userId;
     private Calendar calendario;
     private SimpleDateFormat formatoFirestore, formatoMesVisual;
+
+    WebView webViewPie;
+    WebView webViewBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +68,25 @@ public class ResumenActivity extends AppCompatActivity {
         ImageButton btnMesAnterior = findViewById(R.id.btn_mes_anterior);
         ImageButton btnMesSiguiente = findViewById(R.id.btn_mes_siguiente);
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        //--------------------  agregando la grafica --------------------------------
+        webViewPie = findViewById(R.id.webview_pie_chart);
+        webViewPie.getSettings().setJavaScriptEnabled(true);
+        webViewPie.setBackgroundColor(Color.TRANSPARENT);
+        // Importante: Esperar a que cargue antes de evaluar JavaScript
+        webViewPie.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                actualizarResumen();  // Ahora sí llama esto después de que cargue el HTML
+            }
+        });
+        webViewPie.loadUrl("file:///android_asset/chart_pie.html"); //enlace a graf. circular
+        //--------------------------------------------------------------------
+        webViewBar = findViewById(R.id.webview_bar_chart);
+        webViewBar.getSettings().setJavaScriptEnabled(true);
+        webViewBar.setBackgroundColor(Color.TRANSPARENT);
 
+        webViewBar.loadUrl("file:///android_asset/chart_bar.html"); //enlace a graf. barras
+        //--------------------------------------------------------------------
         db = FirebaseFirestore.getInstance();
         FirebaseAuth auth = FirebaseAuth.getInstance();
         if(auth.getCurrentUser()==null){
@@ -68,7 +104,6 @@ public class ResumenActivity extends AppCompatActivity {
 
         tvMesActual.setOnClickListener(v -> mostrarDialogoMes());
 
-
         btnMesAnterior.setOnClickListener(v -> {
             calendario.add(Calendar.MONTH, -1);
             actualizarResumen();
@@ -83,6 +118,7 @@ public class ResumenActivity extends AppCompatActivity {
             int itemId = item.getItemId();
 
             if (itemId == R.id.nav_ingresos) {
+                startActivity(new Intent(this, IngresosActivity.class));
                 return true;
 
             } else if (itemId == R.id.nav_egresos) {
@@ -105,8 +141,7 @@ public class ResumenActivity extends AppCompatActivity {
             return false;
         });
 
-        bottomNav.setSelectedItemId(R.id.nav_resumen);
-
+        //bottomNav.setSelectedItemId(R.id.nav_resumen);
         // Inicial
         actualizarResumen();
 
@@ -143,9 +178,27 @@ public class ResumenActivity extends AppCompatActivity {
                                     Double monto = doc.getDouble("monto");
                                     if (monto != null) totalEgresos[0] += monto;
                                 }
+                                tvTotalIngresos.setText(String.format(Locale.getDefault(), "S/. %.2f", totalIngresos[0]));
                                 tvTotalEgresos.setText(String.format(Locale.getDefault(), "S/. %.2f", totalEgresos[0]));
                                 double balance = totalIngresos[0] - totalEgresos[0];
                                 tvBalance.setText(String.format(Locale.getDefault(), "%s S/. %.2f", (balance >= 0 ? "+" : "-"), Math.abs(balance)));
+
+                                try {
+                                    JSONObject jsonData = new JSONObject();
+                                    JSONArray labels = new JSONArray();
+                                    JSONArray values = new JSONArray();
+                                    labels.put("Ingresos");
+                                    labels.put("Egresos");
+                                    values.put(totalIngresos[0]);
+                                    values.put(totalEgresos[0]);
+                                    jsonData.put("labels", labels);
+                                    jsonData.put("values", values);
+                                    webViewPie.evaluateJavascript("updateChart(" + jsonData.toString() + ")", null);
+                                    webViewBar.evaluateJavascript("updateBarChart(" + jsonData.toString() + ")", null);
+
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             });
                 });
     }

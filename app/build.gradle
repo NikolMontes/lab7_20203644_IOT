@@ -51,5 +51,6 @@ dependencies {
     //implementation 'com.facebook.android:facebook-android-sdk:16.3.0'
     implementation 'com.facebook.android:facebook-android-sdk:[15,16)'
 
+    implementation 'com.github.PhilJay:MPAndroidChart:3.1.0'
 
 }

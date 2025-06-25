@@ -124,7 +124,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Si ya está logueado
         if (auth.getCurrentUser() != null) {
-            startActivity(new Intent(this, VistainicialActivity.class));
+            startActivity(new Intent(this, ResumenActivity.class));
             finish();
         }
 
@@ -160,7 +160,7 @@ public class LoginActivity extends AppCompatActivity {
 //    }
 
     private void goToHome() {
-        startActivity(new Intent(this, VistainicialActivity.class));
+        startActivity(new Intent(this, ResumenActivity.class));
         finish();
     }
 
@@ -175,7 +175,7 @@ public class LoginActivity extends AppCompatActivity {
 
         auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
-                    startActivity(new Intent(this, VistainicialActivity.class));
+                    startActivity(new Intent(this, ResumenActivity.class));
                     finish();
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
