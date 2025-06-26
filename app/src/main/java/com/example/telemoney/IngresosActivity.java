@@ -3,10 +3,13 @@ package com.example.telemoney;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -24,6 +28,7 @@ import com.example.telemoney.R;
 
 import com.example.telemoney.beans.Ingreso;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -37,6 +42,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public class IngresosActivity extends AppCompatActivity {
 
@@ -47,6 +53,11 @@ public class IngresosActivity extends AppCompatActivity {
     private TextView tvTotalIngresos;
     private FirebaseFirestore db;
     private String userId;
+
+    private Uri uriImagenSeleccionada;
+    private final int CODIGO_SELECCION_IMAGEN = 1001;
+    private ServicioAlmacenamiento servicioAlmacenamiento;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +83,7 @@ public class IngresosActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        servicioAlmacenamiento = new ServicioAlmacenamiento(this);
 
         cargarIngresos();
 
@@ -139,12 +151,30 @@ public class IngresosActivity extends AppCompatActivity {
         Button btnGuardar = view.findViewById(R.id.btn_guardar);
         Button btnCancelar = view.findViewById(R.id.btn_cancelar);
 
+        // Imagen
+        MaterialButton btnSeleccionarImagen = view.findViewById(R.id.btn_seleccionar_imagen);
+        MaterialButton btnEliminarImagen = view.findViewById(R.id.btn_eliminar_imagen);
+        LinearLayout llPreview = view.findViewById(R.id.ll_imagen_preview);
+        ImageView ivPreview = view.findViewById(R.id.iv_imagen_preview);
+        TextView tvNombreImagen = view.findViewById(R.id.tv_nombre_imagen);
+
         final Calendar calendario = Calendar.getInstance();
         etFecha.setOnClickListener(v -> {
             new DatePickerDialog(this, (view1, year, month, dayOfMonth) -> {
                 String fechaFormateada = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month + 1, year);
                 etFecha.setText(fechaFormateada);
             }, calendario.get(Calendar.YEAR), calendario.get(Calendar.MONTH), calendario.get(Calendar.DAY_OF_MONTH)).show();
+        });
+
+        btnSeleccionarImagen.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+            startActivityForResult(intent, CODIGO_SELECCION_IMAGEN);
+        });
+
+        btnEliminarImagen.setOnClickListener(v -> {
+            uriImagenSeleccionada = null;
+            llPreview.setVisibility(View.GONE);
         });
 
         final AlertDialog dialog = new AlertDialog.Builder(this)
@@ -163,11 +193,11 @@ public class IngresosActivity extends AppCompatActivity {
         }
 
         btnGuardar.setOnClickListener(v -> {
-            String titulo = etTitulo.getText().toString().trim();
-            String montoStr = etMonto.getText().toString().trim();
-            String descripcion = etDescripcion.getText().toString().trim();
-            String fechaStr = etFecha.getText().toString().trim();
-            Date fecha = null;
+            final String titulo = etTitulo.getText().toString().trim();
+            final String montoStr = etMonto.getText().toString().trim();
+            final String descripcion = etDescripcion.getText().toString().trim();
+            final String fechaStr = etFecha.getText().toString().trim();
+            final Date fecha;
             try {
                 fecha = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(fechaStr);
             } catch (Exception e) {
@@ -175,24 +205,34 @@ public class IngresosActivity extends AppCompatActivity {
                 return;
             }
 
-            if (titulo.isEmpty() || montoStr.isEmpty() || fecha==null) {
+            if (titulo.isEmpty() || montoStr.isEmpty() || fecha == null || uriImagenSeleccionada == null) {
                 Toast.makeText(this, "Por favor completa los campos obligatorios", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            double monto = Double.parseDouble(montoStr);
-            Ingreso ingreso = new Ingreso(titulo, monto, descripcion, fecha);
+            final double monto = Double.parseDouble(montoStr);
+            final String nombreImagen = UUID.randomUUID().toString() + ".jpg";
 
-            if (ingresoExistente != null) {
-                db.collection("usuarios").document(userId)
-                        .collection("ingresos").document(ingresoExistente.getId())
-                        .update("monto", monto, "descripcion", descripcion)
-                        .addOnSuccessListener(aVoid -> dialog.dismiss());
-            } else {
-                db.collection("usuarios").document(userId)
-                        .collection("ingresos").add(ingreso)
-                        .addOnSuccessListener(docRef -> dialog.dismiss());
-            }
+
+            servicioAlmacenamiento.guardarArchivo(uriImagenSeleccionada, urlImagen -> {
+                Ingreso ingreso = new Ingreso(titulo, monto, descripcion, fecha);
+                ingreso.setImagenUrl(urlImagen);
+
+                if (ingresoExistente != null) {
+                    db.collection("usuarios").document(userId)
+                            .collection("ingresos").document(ingresoExistente.getId())
+                            .update("monto", monto, "descripcion", descripcion)
+                            .addOnSuccessListener(aVoid -> dialog.dismiss());
+                } else {
+                    db.collection("usuarios").document(userId)
+                            .collection("ingresos").add(ingreso)
+                            .addOnSuccessListener(docRef -> dialog.dismiss());
+                }
+
+            }, error -> {
+                Toast.makeText(this, "Error al subir imagen: " + error, Toast.LENGTH_SHORT).show();
+            });
+
         });
 
         btnCancelar.setOnClickListener(v -> dialog.dismiss());
@@ -210,5 +250,24 @@ public class IngresosActivity extends AppCompatActivity {
                 .addOnSuccessListener(unused -> Toast.makeText(this, "Ingreso eliminado", Toast.LENGTH_SHORT).show());
     }
 
+   @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CODIGO_SELECCION_IMAGEN && resultCode == RESULT_OK && data != null) {
+            uriImagenSeleccionada = data.getData();
+            Log.d("IngresoActivity", "Imagen seleccionada: " + uriImagenSeleccionada);
+            // Opcional: Mostrar nombre e imagen seleccionada
+            if (uriImagenSeleccionada != null) {
+                View viewDialog = getLayoutInflater().inflate(R.layout.agregar_ingreso, null);
+                TextView tvNombreImagen = viewDialog.findViewById(R.id.tv_nombre_imagen);
+                ImageView ivPreview = viewDialog.findViewById(R.id.iv_imagen_preview);
+                LinearLayout llPreview = viewDialog.findViewById(R.id.ll_imagen_preview);
+
+                tvNombreImagen.setText(uriImagenSeleccionada.getLastPathSegment());
+                ivPreview.setImageURI(uriImagenSeleccionada);
+                llPreview.setVisibility(View.VISIBLE);
+            }
+        }
+    }
 
 }

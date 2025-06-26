@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "482105465598",
+    "project_id": "telemoneystorage",
+    "storage_bucket": "telemoneystorage.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:482105465598:android:83c19038723cb5ba1a63af",
+        "android_client_info": {
+          "package_name": "com.example.telemoney"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaTxDQOqHqmGJ7rexibCV4C3F9mWBFOJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -8,6 +8,7 @@ public class Egreso {
     private double monto;
     private String descripcion;
     private Date fecha;
+    private String urlImagen;
 
     public Egreso(){
 
@@ -57,5 +58,12 @@ public class Egreso {
 
     public void setFecha(Date  fecha) {
         this.fecha = fecha;
+    }
+    public String getUrlImagen() {
+        return urlImagen;
+    }
+
+    public void setUrlImagen(String urlImagen) {
+        this.urlImagen = urlImagen;
     }
 }

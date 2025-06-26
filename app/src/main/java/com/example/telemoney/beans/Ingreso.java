@@ -8,6 +8,7 @@ public class Ingreso {
     private double monto;
     private String descripcion;
     private Date fecha;
+    private String imagenUrl;
     public Ingreso() {
     }
     public Ingreso(String titulo, double monto, String descripcion, Date fecha) {
@@ -53,6 +54,14 @@ public class Ingreso {
 
     public void setFecha(Date fecha) {
         this.fecha = fecha;
+    }
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
     }
 
 }

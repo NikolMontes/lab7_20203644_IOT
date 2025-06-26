@@ -36,4 +36,7 @@
 
     <color name="success_color">#388E3C</color> <!-- Verde oscuro para ingresos -->
     <color name="warning_color">#FFA000</color>
+
+    <color name="image_background">#f5f5f5</color>
+    <color name="border_color">#e0e0e0</color>
 </resources>

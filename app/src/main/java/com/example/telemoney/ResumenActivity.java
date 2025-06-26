@@ -20,6 +20,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -49,6 +50,8 @@ public class ResumenActivity extends AppCompatActivity {
 
     WebView webViewPie;
     WebView webViewBar;
+    private boolean pieCargado = false;
+    private boolean barraCargado = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +79,10 @@ public class ResumenActivity extends AppCompatActivity {
         webViewPie.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                actualizarResumen();  // Ahora sí llama esto después de que cargue el HTML
+                pieCargado = true;
+                if (barraCargado) {
+                    actualizarResumen();     // Ahora sí llama esto después de que cargue el HTML
+                }
             }
         });
         webViewPie.loadUrl("file:///android_asset/chart_pie.html"); //enlace a graf. circular
@@ -84,6 +90,16 @@ public class ResumenActivity extends AppCompatActivity {
         webViewBar = findViewById(R.id.webview_bar_chart);
         webViewBar.getSettings().setJavaScriptEnabled(true);
         webViewBar.setBackgroundColor(Color.TRANSPARENT);
+
+        webViewBar.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                barraCargado = true;
+                if (pieCargado) {
+                    actualizarResumen();
+                }
+            }
+        });
 
         webViewBar.loadUrl("file:///android_asset/chart_bar.html"); //enlace a graf. barras
         //--------------------------------------------------------------------
@@ -149,16 +165,35 @@ public class ResumenActivity extends AppCompatActivity {
 
     private void actualizarResumen() {
         String mesFiltro = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(calendario.getTime());
-        tvMesActual.setText(formatoMesVisual.format(calendario.getTime()));
+        //tvMesActual.setText(formatoMesVisual.format(calendario.getTime()));
+        String mesVisual = formatoMesVisual.format(calendario.getTime());
+        tvMesActual.setText(mesVisual);
 
         double[] totalIngresos = {0.0};
         double[] totalEgresos = {0.0};
 
+        Calendar inicioMes = (Calendar) calendario.clone();
+        inicioMes.set(Calendar.DAY_OF_MONTH, 1);
+        inicioMes.set(Calendar.HOUR_OF_DAY, 0);
+        inicioMes.set(Calendar.MINUTE, 0);
+        inicioMes.set(Calendar.SECOND, 0);
+
+        Calendar finMes = (Calendar) inicioMes.clone();
+        finMes.set(Calendar.DAY_OF_MONTH, finMes.getActualMaximum(Calendar.DAY_OF_MONTH));
+        finMes.set(Calendar.HOUR_OF_DAY, 23);
+        finMes.set(Calendar.MINUTE, 59);
+        finMes.set(Calendar.SECOND, 59);
+
+        Timestamp fechaInicio = new Timestamp(inicioMes.getTime());
+        Timestamp fechaFin = new Timestamp(finMes.getTime());
+
         // Obtener ingresos del mes
         db.collection("usuarios").document(userId)
                 .collection("ingresos")
-                .whereGreaterThanOrEqualTo("fecha", "01/" + mesFiltro)
-                .whereLessThanOrEqualTo("fecha", "31/" + mesFiltro)
+//                .whereGreaterThanOrEqualTo("fecha", "01/" + mesFiltro)
+//                .whereLessThanOrEqualTo("fecha", "31/" + mesFiltro)
+                .whereGreaterThanOrEqualTo("fecha", fechaInicio)
+                .whereLessThanOrEqualTo("fecha",fechaFin)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
@@ -170,19 +205,32 @@ public class ResumenActivity extends AppCompatActivity {
                     // Obtener egresos después de ingresos
                     db.collection("usuarios").document(userId)
                             .collection("egresos")
-                            .whereGreaterThanOrEqualTo("fecha", "01/" + mesFiltro)
-                            .whereLessThanOrEqualTo("fecha", "31/" + mesFiltro)
+//                            .whereGreaterThanOrEqualTo("fecha", "01/" + mesFiltro)
+//                            .whereLessThanOrEqualTo("fecha", "31/" + mesFiltro)
+                            .whereGreaterThanOrEqualTo("fecha", fechaInicio)
+                            .whereLessThanOrEqualTo("fecha",fechaFin)
                             .get()
                             .addOnSuccessListener(querySnapshots -> {
                                 for (QueryDocumentSnapshot doc : querySnapshots) {
                                     Double monto = doc.getDouble("monto");
                                     if (monto != null) totalEgresos[0] += monto;
                                 }
-                                tvTotalIngresos.setText(String.format(Locale.getDefault(), "S/. %.2f", totalIngresos[0]));
+                                //tvTotalIngresos.setText(String.format(Locale.getDefault(), "S/. %.2f", totalIngresos[0]));
                                 tvTotalEgresos.setText(String.format(Locale.getDefault(), "S/. %.2f", totalEgresos[0]));
                                 double balance = totalIngresos[0] - totalEgresos[0];
                                 tvBalance.setText(String.format(Locale.getDefault(), "%s S/. %.2f", (balance >= 0 ? "+" : "-"), Math.abs(balance)));
+                                //------- aquí se determina si se muestra el grafico o el mensaje --------------
+                                TextView placeholderCircular = findViewById(R.id.tv_placeholder_circular);
+                                WebView pieChartWebView = findViewById(R.id.webview_pie_chart);
 
+                                if (totalIngresos[0] == 0 && totalEgresos[0] == 0) {
+                                    placeholderCircular.setVisibility(View.VISIBLE);
+                                    pieChartWebView.setVisibility(View.GONE);
+                                } else {
+                                    placeholderCircular.setVisibility(View.GONE);
+                                    pieChartWebView.setVisibility(View.VISIBLE);
+                                }
+                                //------------------------------------------------------------------------------
                                 try {
                                     JSONObject jsonData = new JSONObject();
                                     JSONArray labels = new JSONArray();

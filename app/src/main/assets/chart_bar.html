@@ -21,17 +21,22 @@
 <canvas id="barChart"></canvas>
 
 <script>
+    let barChartInstance = null;
     function renderCharts(data) {
       const ctx = document.getElementById("barChart").getContext("2d");
 
-      new Chart(ctx, {
+      if (barChartInstance !== null) {
+            barChartInstance.destroy();
+      }
+
+      barChartInstance = new Chart(ctx, {
         type: "bar",
         data: {
           labels: data.labels,
           datasets: [{
             label: "Monto",
             data: data.values,
-            backgroundColor: ["#4CAF50", "#F44336"],
+            backgroundColor: ["#4CAF50", "#FF9800"],
             borderRadius: 8,
           }]
         },
@@ -61,6 +66,10 @@
           }
         }
       });
+    }
+
+    function updateBarChart(data) {
+        renderCharts(data);
     }
 </script>
 </body>

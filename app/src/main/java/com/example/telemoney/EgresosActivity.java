@@ -3,10 +3,13 @@ package com.example.telemoney;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,6 +40,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.List;
+import java.util.UUID;
 
 
 public class EgresosActivity extends AppCompatActivity {
@@ -48,6 +52,9 @@ public class EgresosActivity extends AppCompatActivity {
     private TextView tvTotalEgresos;
     private FirebaseFirestore db;
     private String userId;
+    private Uri uriImagenSeleccionada;
+    private ServicioAlmacenamiento servicioAlmacenamiento;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +79,7 @@ public class EgresosActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        servicioAlmacenamiento = new ServicioAlmacenamiento(this);
 
         cargarEgresos();
 
@@ -141,12 +149,26 @@ public class EgresosActivity extends AppCompatActivity {
         Button btnGuardar = view.findViewById(R.id.btn_guardar);
         Button btnCancelar = view.findViewById(R.id.btn_cancelar);
 
+        // Imagen
+        ImageView ivPreview = view.findViewById(R.id.iv_imagen_preview);
+        TextView tvNombreImagen = view.findViewById(R.id.tv_nombre_imagen);
+        LinearLayout llPreview = view.findViewById(R.id.ll_imagen_preview);
+        Button btnEliminarImagen = view.findViewById(R.id.btn_eliminar_imagen);
+        ivPreview.setImageResource(0);
+        llPreview.setVisibility(View.GONE);
+
         final Calendar calendario = Calendar.getInstance();
         etFecha.setOnClickListener(v -> {
             new DatePickerDialog(this, (view1, year, month, dayOfMonth) -> {
                 String fechaFormateada = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month + 1, year);
                 etFecha.setText(fechaFormateada);
             }, calendario.get(Calendar.YEAR), calendario.get(Calendar.MONTH), calendario.get(Calendar.DAY_OF_MONTH)).show();
+        });
+
+        ivPreview.setOnClickListener(v -> seleccionarImagen());
+        btnEliminarImagen.setOnClickListener(v -> {
+            uriImagenSeleccionada = null;
+            llPreview.setVisibility(View.GONE);
         });
 
         final AlertDialog dialog = new AlertDialog.Builder(this)
@@ -165,11 +187,11 @@ public class EgresosActivity extends AppCompatActivity {
         }
 
         btnGuardar.setOnClickListener(v -> {
-            String titulo = etTitulo.getText().toString().trim();
-            String montoStr = etMonto.getText().toString().trim();
-            String descripcion = etDescripcion.getText().toString().trim();
-            String fechaStr = etFecha.getText().toString().trim();
-            Date fecha = null;
+            final String titulo = etTitulo.getText().toString().trim();
+            final String montoStr = etMonto.getText().toString().trim();
+            final String descripcion = etDescripcion.getText().toString().trim();
+            final String fechaStr = etFecha.getText().toString().trim();
+            final Date fecha;
             try {
                 fecha = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(fechaStr);
             } catch (Exception e) {
@@ -177,28 +199,49 @@ public class EgresosActivity extends AppCompatActivity {
                 return;
             }
 
-            if (titulo.isEmpty() || montoStr.isEmpty() || fecha==null) {
+            if (titulo.isEmpty() || montoStr.isEmpty() || fecha==null || uriImagenSeleccionada == null) {
                 Toast.makeText(this, "Por favor completa los campos obligatorios", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            double monto = Double.parseDouble(montoStr);
-            Egreso egreso = new Egreso(titulo, monto, descripcion, fecha);
+            final double monto = Double.parseDouble(montoStr);
+            final String nombreImagen = UUID.randomUUID().toString() + ".jpg";
 
-            if (egresoExistente != null) {
-                db.collection("usuarios").document(userId)
-                        .collection("egresos").document(egresoExistente.getId())
-                        .update("monto", monto, "descripcion", descripcion)
-                        .addOnSuccessListener(aVoid -> dialog.dismiss());
+
+            if (uriImagenSeleccionada != null) {
+                Log.d("Cloudinary", "Iniciando subida...");
+                servicioAlmacenamiento.guardarArchivo(uriImagenSeleccionada,  url -> {
+                    Egreso egreso = new Egreso(titulo, monto, descripcion, fecha);
+                    egreso.setUrlImagen(url);
+
+                    guardarEgresoFirestore(egreso, egresoExistente, dialog);
+
+                }, error -> {
+                    Toast.makeText(this, "Error al subir imagen: " + error, Toast.LENGTH_SHORT).show();
+                });
             } else {
-                db.collection("usuarios").document(userId)
-                        .collection("egresos").add(egreso)
-                        .addOnSuccessListener(docRef -> dialog.dismiss());
+                Egreso egreso = new Egreso(titulo, monto, descripcion, fecha);
+                egreso.setUrlImagen(""); // o puedes no incluirlo en Firestore si prefieres
+                guardarEgresoFirestore(egreso, egresoExistente, dialog);
             }
         });
 
         btnCancelar.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
+    }
+
+    private void guardarEgresoFirestore(Egreso egreso, Egreso egresoExistente, AlertDialog dialog) {
+
+        if (egresoExistente != null) {
+            db.collection("usuarios").document(userId)
+                    .collection("egresos").document(egresoExistente.getId())
+                    .update("monto", egreso.getMonto(), "descripcion", egreso.getDescripcion(), "urlImagen", egreso.getUrlImagen())
+                    .addOnSuccessListener(aVoid -> dialog.dismiss());
+        } else {
+            db.collection("usuarios").document(userId)
+                    .collection("egresos").add(egreso)
+                    .addOnSuccessListener(docRef -> dialog.dismiss());
+        }
     }
 
     private void mostrarDialogoEditarEgreso(Egreso egreso) {
@@ -211,6 +254,32 @@ public class EgresosActivity extends AppCompatActivity {
                 .delete()
                 .addOnSuccessListener(unused -> Toast.makeText(this, "Egreso eliminado", Toast.LENGTH_SHORT).show());
     }
+
+    private void seleccionarImagen() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, 1001);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
+            uriImagenSeleccionada = data.getData();
+            if (uriImagenSeleccionada != null) {
+                // Mostrar vista previa
+                View dialogView = getLayoutInflater().inflate(R.layout.agregar_egreso, null);
+                ImageView ivPreview = dialogView.findViewById(R.id.iv_imagen_preview);
+                TextView tvNombre = dialogView.findViewById(R.id.tv_nombre_imagen);
+                LinearLayout llPreview = dialogView.findViewById(R.id.ll_imagen_preview);
+
+                ivPreview.setImageURI(uriImagenSeleccionada);
+                tvNombre.setText(uriImagenSeleccionada.getLastPathSegment());
+                llPreview.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
 
 
 }
