@@ -39,4 +39,8 @@
 
     <color name="image_background">#f5f5f5</color>
     <color name="border_color">#e0e0e0</color>
+    <color name="download_color">#4CAF50</color>
+    <color name="download_color_egreso">#FF9800</color> <!-- Naranja -->
+
+
 </resources>

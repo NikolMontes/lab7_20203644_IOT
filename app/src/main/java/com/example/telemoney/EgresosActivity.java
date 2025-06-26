@@ -54,6 +54,9 @@ public class EgresosActivity extends AppCompatActivity {
     private String userId;
     private Uri uriImagenSeleccionada;
     private ServicioAlmacenamiento servicioAlmacenamiento;
+    private static final int REQUEST_SELECCIONAR_IMAGEN = 1001;
+    private View vistaDialogoEgreso;
+
 
 
     @Override
@@ -73,7 +76,7 @@ public class EgresosActivity extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
 
         listaEgresos = new ArrayList<>();
-        adapter = new EgresoAdapter(listaEgresos, this::mostrarDialogoEditarEgreso, this::eliminarEgreso);
+        adapter = new EgresoAdapter(this,listaEgresos, this::mostrarDialogoEditarEgreso, this::eliminarEgreso);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
@@ -140,7 +143,8 @@ public class EgresosActivity extends AppCompatActivity {
     }
 
     private void mostrarDialogoEgreso(@NonNull Egreso egresoExistente) {
-        View view = LayoutInflater.from(this).inflate(R.layout.agregar_egreso, null);
+        vistaDialogoEgreso  = LayoutInflater.from(this).inflate(R.layout.agregar_egreso, null);
+        View view = vistaDialogoEgreso;
         TextInputEditText etTitulo = view.findViewById(R.id.et_titulo);
         TextInputEditText etMonto = view.findViewById(R.id.et_monto);
         TextInputEditText etDescripcion = view.findViewById(R.id.et_descripcion);
@@ -150,12 +154,18 @@ public class EgresosActivity extends AppCompatActivity {
         Button btnCancelar = view.findViewById(R.id.btn_cancelar);
 
         // Imagen
+        Button btnSeleccionarImagen = view.findViewById(R.id.btn_seleccionar_imagen);
+        btnSeleccionarImagen.setOnClickListener(v -> seleccionarImagen());
         ImageView ivPreview = view.findViewById(R.id.iv_imagen_preview);
         TextView tvNombreImagen = view.findViewById(R.id.tv_nombre_imagen);
         LinearLayout llPreview = view.findViewById(R.id.ll_imagen_preview);
         Button btnEliminarImagen = view.findViewById(R.id.btn_eliminar_imagen);
         ivPreview.setImageResource(0);
         llPreview.setVisibility(View.GONE);
+
+        Button btnTomarFoto = view.findViewById(R.id.btn_tomar_foto);
+        btnTomarFoto.setOnClickListener(v -> Toast.makeText(this, "Función cámara aún no implementada", Toast.LENGTH_SHORT).show());
+
 
         final Calendar calendario = Calendar.getInstance();
         etFecha.setOnClickListener(v -> {
@@ -256,15 +266,15 @@ public class EgresosActivity extends AppCompatActivity {
     }
 
     private void seleccionarImagen() {
-        Intent intent = new Intent(Intent.ACTION_PICK);
+        Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
-        startActivityForResult(intent, 1001);
+        startActivityForResult(intent, REQUEST_SELECCIONAR_IMAGEN);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
+        if (requestCode == REQUEST_SELECCIONAR_IMAGEN && resultCode == RESULT_OK && data != null) {
             uriImagenSeleccionada = data.getData();
             if (uriImagenSeleccionada != null) {
                 // Mostrar vista previa

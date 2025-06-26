@@ -77,7 +77,7 @@ public class IngresosActivity extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
 
         listaIngresos = new ArrayList<>();
-        adapter = new IngresoAdapter(listaIngresos, this::mostrarDialogoEditarIngreso, this::eliminarIngreso);
+        adapter = new IngresoAdapter(this, listaIngresos, this::mostrarDialogoEditarIngreso, this::eliminarIngreso);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 

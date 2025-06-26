@@ -1,11 +1,16 @@
 package com.example.telemoney;
 
+import android.app.DownloadManager;
+import android.content.Context;
+import android.net.Uri;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,6 +36,7 @@ public class EgresoAdapter extends RecyclerView.Adapter<EgresoAdapter.EgresoView
         void onEliminar(Egreso egreso);
     }
 
+    private Context context;
     private List<Egreso> listaEgresos;
 //    private OnEgresoActionListener listener;
 //
@@ -41,7 +47,8 @@ public class EgresoAdapter extends RecyclerView.Adapter<EgresoAdapter.EgresoView
     private OnEditarEgresoListener editarListener;
     private OnEliminarEgresoListener eliminarListener;
 
-    public EgresoAdapter(List<Egreso> lista, OnEditarEgresoListener editar, OnEliminarEgresoListener eliminar) {
+    public EgresoAdapter(Context context, List<Egreso> lista, OnEditarEgresoListener editar, OnEliminarEgresoListener eliminar) {
+        this.context = context;
         this.listaEgresos = lista;
         this.editarListener = editar;
         this.eliminarListener = eliminar;
@@ -75,6 +82,29 @@ public class EgresoAdapter extends RecyclerView.Adapter<EgresoAdapter.EgresoView
         holder.btnEditar.setOnClickListener(v -> editarListener.onEditar(egreso));
         holder.btnEliminar.setOnClickListener(v -> eliminarListener.onEliminar(egreso));
 
+        holder.btnDescargar.setOnClickListener(v -> {
+            String urlImagen = egreso.getUrlImagen();
+            if (urlImagen == null || urlImagen.isEmpty()) {
+                Toast.makeText(context, "No hay comprobante para descargar", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(urlImagen));
+            request.setTitle("Comprobante - " + egreso.getTitulo());
+            request.setDescription("Descargando comprobante del egreso");
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "comprobante_" + egreso.getTitulo() + ".jpg");
+
+            DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+            if (manager != null) {
+                manager.enqueue(request);
+                Toast.makeText(context, "Descarga iniciada...", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(context, "Error al iniciar la descarga", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
     }
 
     @Override
@@ -84,7 +114,7 @@ public class EgresoAdapter extends RecyclerView.Adapter<EgresoAdapter.EgresoView
 
     static class EgresoViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitulo, tvDescripcion, tvFecha, tvMonto;
-        ImageButton btnEditar, btnEliminar;
+        ImageButton btnEditar, btnEliminar, btnDescargar;
         ImageView ivIcono;
 
         public EgresoViewHolder(@NonNull View itemView) {
@@ -96,6 +126,8 @@ public class EgresoAdapter extends RecyclerView.Adapter<EgresoAdapter.EgresoView
             btnEditar = itemView.findViewById(R.id.btn_editar_egreso);
             btnEliminar = itemView.findViewById(R.id.btn_eliminar_egreso);
             ivIcono = itemView.findViewById(R.id.iv_icono_egreso);
+            btnDescargar = itemView.findViewById(R.id.btn_descargar_egreso);
+
         }
     }
 

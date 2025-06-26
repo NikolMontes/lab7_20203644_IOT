@@ -94,6 +94,17 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
+                <!-- Botón descargar -->
+                <ImageButton
+                    android:id="@+id/btn_descargar_ingreso"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/download_24px"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Descargar comprobante"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/download_color" />
+
                 <!-- Botón editar -->
                 <ImageButton
                     android:id="@+id/btn_editar_ingreso"

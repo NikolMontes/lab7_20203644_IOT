@@ -19,9 +19,15 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.facebook.login.LoginManager;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -136,32 +142,65 @@ public class ResumenActivity extends AppCompatActivity {
             if (itemId == R.id.nav_ingresos) {
                 startActivity(new Intent(this, IngresosActivity.class));
                 return true;
-
             } else if (itemId == R.id.nav_egresos) {
                 startActivity(new Intent(this, EgresosActivity.class));
                 finish();
                 return true;
-
             } else if (itemId == R.id.nav_resumen) {
                 startActivity(new Intent(this, ResumenActivity.class));
                 finish();
                 return true;
-
             } else if (itemId == R.id.nav_logout) {
-                FirebaseAuth.getInstance().signOut();
-                startActivity(new Intent(this, LoginActivity.class));
-                finish();
-                return true;
-            }
+                FirebaseUser usuarioActual = FirebaseAuth.getInstance().getCurrentUser();
+                //FirebaseAuth.getInstance().signOut();
+//                startActivity(new Intent(this, LoginActivity.class));
+//                finish();
+//                return true;
+                if (usuarioActual != null) {
+                    for (UserInfo userInfo : usuarioActual.getProviderData()) {
+                        String providerId = userInfo.getProviderId();
 
+                        switch (providerId) {
+                            case "google.com":
+                                GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                        .requestEmail()
+                                        .build();
+                                GoogleSignInClient googleClient = GoogleSignIn.getClient(this, gso);
+                                googleClient.signOut().addOnCompleteListener(task -> {
+                                    googleClient.revokeAccess();
+                                    FirebaseAuth.getInstance().signOut();
+                                    redirigirAlLogin();
+                                });
+                                return true;
+
+                            case "facebook.com":
+                                LoginManager.getInstance().logOut();  // de Facebook SDK
+                                FirebaseAuth.getInstance().signOut();
+                                redirigirAlLogin();
+                                return true;
+
+                            default:
+                                // Para email/password u otros
+                                FirebaseAuth.getInstance().signOut();
+                                redirigirAlLogin();
+                                return true;
+                        }
+                    }
+                }
+            }
             return false;
         });
-
         //bottomNav.setSelectedItemId(R.id.nav_resumen);
         // Inicial
         actualizarResumen();
-
     }
+    private void redirigirAlLogin() {
+        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
 
     private void actualizarResumen() {
         String mesFiltro = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(calendario.getTime());
